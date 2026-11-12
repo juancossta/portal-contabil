@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { clearLocalFiles } from "@/lib/file-storage";
 import { site } from "@/lib/site.config";
 import { useStore } from "@/lib/store";
 import { competenciaLabel } from "@/lib/format";
@@ -11,6 +12,8 @@ import type { Role } from "@/lib/types";
 export function Shell({ role, children }: { role: Role; children: ReactNode }) {
   const { state, hydrated, dispatch } = useStore();
   const router = useRouter();
+  const [resetError, setResetError] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (hydrated && state.role !== role) router.replace("/");
@@ -25,17 +28,17 @@ export function Shell({ role, children }: { role: Role; children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-stone-900 px-4 py-1.5 text-center text-xs text-stone-300">
+      <div className="demo-banner px-4 py-2 text-center text-xs leading-relaxed">
         Ambiente de demonstração com dados fictícios ·{" "}
         <a href={wa} target="_blank" rel="noreferrer" className="font-medium text-white underline underline-offset-2">
           {site.poweredBy.cta}
         </a>
       </div>
 
-      <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+      <header className="portal-header">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 px-4 py-4 sm:px-6 lg:px-8">
           <Link href={role === "escritorio" ? "/escritorio" : "/cliente"} className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand font-display text-lg text-white">
+            <span className="brand-mark">
               {site.brand.name[0]}
             </span>
             <span className="leading-tight">
@@ -45,8 +48,18 @@ export function Shell({ role, children }: { role: Role; children: ReactNode }) {
               </span>
             </span>
           </Link>
-          <div className="flex items-center gap-2">
-            <button className="btn-ghost" onClick={() => dispatch({ type: "reset" })}>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="month-control">Competência
+              <input type="month" min="2000-01" max="2100-12" value={state.competencia} className="month-input" onChange={e => dispatch({ type: "setCompetencia", competencia: e.target.value })} />
+            </label>
+            <button className="btn-ghost" disabled={resetting} onClick={async () => {
+              if (!window.confirm("Apagar os dados e arquivos locais e restaurar a demonstração?")) return;
+              setResetting(true);
+              setResetError("");
+              try { await clearLocalFiles(); dispatch({ type: "reset" }); }
+              catch (e) { setResetError(e instanceof Error ? e.message : "Falha ao resetar a demo."); }
+              finally { setResetting(false); }
+            }}>
               Resetar demo
             </button>
             <Link
@@ -60,9 +73,9 @@ export function Shell({ role, children }: { role: Role; children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="portal-main">{resetError && <p role="alert" className="mb-4 text-sm text-rose-700">{resetError}</p>}{children}</main>
 
-      <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-stone-400">
+      <footer className="mx-auto max-w-7xl border-t border-stone-200 px-4 py-6 text-xs text-stone-500 sm:px-6 lg:px-8">
         Desenvolvido por{" "}
         <a
           href={site.poweredBy.instagram}

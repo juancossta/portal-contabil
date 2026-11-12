@@ -11,9 +11,9 @@ export const site = {
   // Quem desenvolveu — aparece no rodapé e no botão "quero um portal assim"
   poweredBy: {
     name: "Reforged Solutions",
-    instagram: "https://www.instagram.com/reforged_solutions",
+    instagram: "https://www.instagram.com/reforged_solutions?cplk=MTlpY2QzanJ3NTZ6cA==",
     cta: "Quero um portal assim para o meu escritório",
-    whatsapp: "5521999999999", // TROCAR pelo seu número comercial
+    whatsapp: "5521959405877",
     message:
       "Olá! Vi a demo do Portal do Cliente e quero saber como funcionaria no meu escritório.",
   },

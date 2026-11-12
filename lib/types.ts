@@ -16,6 +16,11 @@ export type DocType = "xml_vendas" | "xml_compras" | "extrato" | "folha";
 export type DocStatus = "pendente" | "enviado" | "aprovado" | "ajuste";
 
 export type UploadedFile = {
+  fingerprint?: string;
+  fiscalKey?: string;
+  issuedMonth?: string;
+  issuerCnpj?: string;
+  recipientCnpj?: string;
   name: string;
   size: number;
   uploadedAt: string; // ISO

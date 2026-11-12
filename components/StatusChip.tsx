@@ -10,7 +10,7 @@ const MAP: Record<DocStatus, { label: string; cls: string }> = {
 export function StatusChip({ status }: { status: DocStatus }) {
   const s = MAP[status];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${s.cls}`}>
+    <span className={`status-chip ${s.cls}`}>
       {s.label}
     </span>
   );

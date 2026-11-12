@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Shell } from "@/components/Shell";
+import { FileList } from "@/components/FileList";
 import { StatusChip } from "@/components/StatusChip";
 import { useStore, docsOf, revenueOf } from "@/lib/store";
 import { obligationsFor } from "@/lib/obligations";
-import { brl, dateBR, daysUntil, fileSize, competenciaLabel } from "@/lib/format";
+import { brl, dateBR, daysUntil, competenciaLabel } from "@/lib/format";
 import { DOC_LABEL } from "@/lib/types";
 
 export default function DetalheCliente({ params }: { params: { id: string } }) {
@@ -58,7 +59,7 @@ function Conteudo({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className="space-y-4">
           {docs.map((d) => (
             <article key={d.id} className="card p-5">
@@ -70,17 +71,7 @@ function Conteudo({ id }: { id: string }) {
               {d.files.length === 0 ? (
                 <p className="mt-3 text-sm text-stone-500">Nada enviado ainda.</p>
               ) : (
-                <ul className="mt-3 divide-y divide-stone-100 text-sm">
-                  {d.files.map((f, i) => (
-                    <li key={i} className="flex items-center justify-between gap-3 py-2">
-                      <span className="truncate">{f.name}</span>
-                      <span className="shrink-0 tabular-nums text-xs text-stone-500">
-                        {f.total != null ? `${brl(f.total)} · ` : ""}
-                        {fileSize(f.size)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <FileList files={d.files} />
               )}
 
               {d.status === "ajuste" && d.note && (
@@ -92,6 +83,7 @@ function Conteudo({ id }: { id: string }) {
                   {ajusteDoc === d.id ? (
                     <div className="space-y-2">
                       <textarea
+                        aria-label="Motivo do pedido de ajuste"
                         value={nota}
                         onChange={(e) => setNota(e.target.value)}
                         placeholder="O que o cliente precisa corrigir?"
@@ -120,7 +112,7 @@ function Conteudo({ id }: { id: string }) {
                       <button className="btn-primary" onClick={() => dispatch({ type: "review", docId: d.id, result: "aprovado" })}>
                         Aprovar
                       </button>
-                      <button className="btn-ghost" onClick={() => setAjusteDoc(d.id)}>
+                      <button className="btn-ghost" onClick={() => { setNota(""); setAjusteDoc(d.id); }}>
                         Pedir ajuste
                       </button>
                     </div>

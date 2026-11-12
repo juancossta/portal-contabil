@@ -2,25 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: #faf8f4;
-  color: #1c1917;
+@layer base {
+  :root { color-scheme: light; }
+  body {
+    background: #f4f7f6;
+    color: #20332e;
+    font-family: "Segoe UI", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection { background: rgb(var(--brand) / .16); color: #153f34; }
+  h1, h2, h3 { text-wrap: balance; }
+  h1 { letter-spacing: -.035em; }
+  h2 { letter-spacing: -.02em; }
+  button, input, textarea { font: inherit; }
+  button:not(:disabled), a { touch-action: manipulation; }
+  :where(a, button, input, textarea):focus-visible {
+    outline: 3px solid rgb(var(--brand) / .55);
+    outline-offset: 4px;
+  }
+  button:disabled { cursor: not-allowed; }
+  input[type="month"], textarea { accent-color: rgb(var(--brand)); }
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-stone-200 bg-white shadow-sm;
+    @apply rounded-2xl border bg-white;
+    border-color: #e1e9e5;
+    box-shadow: 0 2px 3px rgb(22 52 41 / .02), 0 8px 28px rgb(22 52 41 / .035);
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50;
+    transition: background-color 160ms, border-color 160ms, box-shadow 160ms, transform 160ms;
   }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { box-shadow: none; }
   .btn-primary {
     @apply btn bg-brand text-white hover:bg-brand-dark;
+    box-shadow: 0 3px 8px rgb(var(--brand) / .16);
   }
+  .btn-primary:hover:not(:disabled) { box-shadow: 0 5px 14px rgb(var(--brand) / .22); }
   .btn-ghost {
-    @apply btn border border-stone-300 bg-white text-stone-700 hover:bg-stone-50;
+    @apply btn border bg-white text-stone-700;
+    border-color: #dce5df;
   }
+  .btn-ghost:hover:not(:disabled) { background: #f2f7f4; border-color: #b6ccc1; }
   .label {
-    @apply text-xs font-medium uppercase tracking-wider text-stone-500;
+    @apply text-xs font-semibold uppercase tracking-wider;
+    color: #65776f;
   }
+  .demo-banner { background: #153e34; color: #e2eee8; }
+  .portal-header { background: rgb(255 255 255 / .96); border-bottom: 1px solid #dce7e0; }
+  .brand-mark {
+    @apply grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand text-xl font-semibold text-white;
+    box-shadow: 0 4px 10px rgb(var(--brand) / .18);
+  }
+  .portal-main { @apply mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8; }
+  .month-control { @apply flex flex-wrap items-center gap-2 text-xs font-medium text-stone-600; }
+  .month-input { @apply min-h-11 min-w-0 rounded-xl border bg-stone-50 px-3 py-2 text-sm text-stone-700; border-color: #dce5df; }
+  .page-heading { @apply mb-7 border-l-4 border-brand pl-4 sm:mb-8 sm:pl-5; }
+  .eyebrow { @apply mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-brand; }
+  .kpi-card { @apply relative overflow-hidden p-5 sm:p-6; }
+  .kpi-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--kpi-accent, rgb(var(--brand))); }
+  .kpi-amber { --kpi-accent: #d49a20; background: linear-gradient(120deg, #fff 55%, #fffbef); }
+  .kpi-rose { --kpi-accent: #d46b7f; background: linear-gradient(120deg, #fff 55%, #fff5f6); }
+  .kpi-emerald { --kpi-accent: #2b9574; background: linear-gradient(120deg, #fff 55%, #effaf4); }
+  .section-heading { @apply flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4 sm:px-6; border-color: #e9eee9; }
+  .client-row { @apply grid items-center gap-x-4 gap-y-3 px-5 py-5 sm:px-6; grid-template-columns: minmax(0, 1fr) auto; transition: background-color 160ms; }
+  .client-row:hover { background: #f8fbf9; }
+  .client-identity { @apply col-span-2 flex min-w-0 items-center gap-3; }
+  .client-avatar { @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-sm font-bold text-brand; }
+  .client-progress { @apply min-w-0; }
+  .client-revenue { @apply text-right text-sm font-semibold tabular-nums text-stone-700; }
+  .client-actions { @apply col-span-2 flex flex-wrap justify-end gap-2; }
+  .progress-track { @apply flex h-1.5 overflow-hidden rounded-full bg-stone-100; }
+  .progress-track > div { transition: width 240ms ease; }
+  .sidebar-card { @apply p-5 sm:p-6; }
+  .timeline > li { @apply relative border-l border-stone-200 pl-4; }
+  .timeline > li::before { content: ""; position: absolute; top: 6px; left: -4px; width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--brand)); box-shadow: 0 0 0 3px white; }
+  .landing { @apply mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14; }
+  .landing-hero { @apply relative overflow-hidden rounded-3xl border bg-white p-6 sm:p-10 lg:p-12; border-color: #dce7e0; background-image: radial-gradient(ellipse at top right, rgb(var(--brand) / .09), transparent 65%); }
+  .profile-card { @apply p-6 sm:p-8; }
+  .company-choice { @apply flex min-h-14 flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 px-4 py-3 text-left text-sm transition-colors hover:border-brand hover:bg-brand/5 disabled:opacity-50; }
+  .drop-zone { @apply rounded-xl border-2 border-dashed p-5 text-center text-sm transition-colors sm:p-6; }
+  .status-chip { @apply inline-flex min-h-7 shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset; }
+  .status-chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+}
+
+@media (min-width: 1280px) {
+  .client-row { grid-template-columns: minmax(155px, 1fr) 115px 105px auto; }
+  .client-identity, .client-actions { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }

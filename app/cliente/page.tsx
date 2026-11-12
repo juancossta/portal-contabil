@@ -2,12 +2,15 @@
 
 import { useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
+import { FileList } from "@/components/FileList";
+import { saveLocalFiles } from "@/lib/file-storage";
+import { validateBatch } from "@/lib/upload-validation";
 import { StatusChip } from "@/components/StatusChip";
 import { site } from "@/lib/site.config";
 import { useStore, docsOf, revenueOf } from "@/lib/store";
 import { obligationsFor } from "@/lib/obligations";
-import { parseUpload, sampleFiles } from "@/lib/xml";
-import { brl, dateBR, daysUntil, fileSize, competenciaLabel } from "@/lib/format";
+import { parseUpload, sampleFiles, validateUpload } from "@/lib/xml";
+import { brl, dateBR, daysUntil, competenciaLabel } from "@/lib/format";
 import { DOC_HINT, DOC_LABEL } from "@/lib/types";
 import type { DocRequest } from "@/lib/types";
 
@@ -49,7 +52,7 @@ function Conteudo() {
         </a>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section className="space-y-4">
           {docs.map((d) => (
             <DocCard key={d.id} doc={d} />
@@ -88,7 +91,10 @@ function Conteudo() {
 }
 
 function DocCard({ doc }: { doc: DocRequest }) {
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
+  const sending = useRef(false);
+  const [feedback, setFeedback] = useState("");
+  const client = state.clients.find(c => c.id === doc.clientId);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -96,11 +102,25 @@ function DocCard({ doc }: { doc: DocRequest }) {
   const locked = doc.status === "aprovado";
 
   async function send(list: File[]) {
-    if (!list.length) return;
+    if (!list.length || sending.current || locked) return;
+    sending.current = true;
     setBusy(true);
-    const parsed = await Promise.all(list.map(parseUpload));
-    dispatch({ type: "upload", docId: doc.id, files: parsed });
-    setBusy(false);
+    setFeedback("");
+    try {
+      if (list.length > 30) throw new Error("Envie no máximo 30 arquivos por vez.");
+      list.forEach(file => validateUpload(file, doc.type));
+      const parsed = await Promise.all(list.map(parseUpload));
+      if (!client) throw new Error("Cliente não encontrado.");
+      validateBatch(parsed, doc, client);
+      await saveLocalFiles(parsed.map((file, i) => ({ key: file.fingerprint!, file: list[i] })));
+      dispatch({ type: "upload", docId: doc.id, files: parsed });
+      setFeedback("Arquivos salvos neste navegador e enviados para revisão na demo.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível enviar os arquivos.");
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
   }
 
   return (
@@ -118,19 +138,11 @@ function DocCard({ doc }: { doc: DocRequest }) {
       )}
 
       {doc.files.length > 0 && (
-        <ul className="mt-3 divide-y divide-stone-100 text-sm">
-          {doc.files.map((f, i) => (
-            <li key={i} className="flex items-center justify-between gap-3 py-2">
-              <span className="truncate">{f.name}</span>
-              <span className="shrink-0 tabular-nums text-xs text-stone-500">
-                {f.total != null ? `${brl(f.total)} · ` : ""}
-                {fileSize(f.size)}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <FileList files={doc.files} disabled={busy} onRemove={locked ? undefined : index => dispatch({ type: "removeFile", docId: doc.id, index })} />
       )}
 
+      {feedback && <p role="status" className="mt-3 text-sm text-stone-700">{feedback}</p>}
+      {doc.status === "ajuste" && doc.files.length > 0 && <button className="btn-primary mt-3" disabled={busy} onClick={() => dispatch({ type: "resubmit", docId: doc.id })}>Reenviar arquivos para revisão</button>}
       {!locked && (
         <div
           onDragOver={(e) => {
@@ -143,16 +155,17 @@ function DocCard({ doc }: { doc: DocRequest }) {
             setDrag(false);
             void send(Array.from(e.dataTransfer.files));
           }}
-          className={`mt-4 rounded-lg border-2 border-dashed p-4 text-center text-sm transition ${
+          className={`drop-zone mt-4 ${
             drag ? "border-brand bg-brand/5" : "border-stone-300"
           }`}
         >
+          <p className="mb-2 text-xs text-stone-500">Até 10 MB por arquivo, 30 arquivos por envio. Arquivos ficam apenas neste navegador.</p>
           <p className="text-stone-600">{busy ? "Lendo arquivos…" : "Arraste os arquivos aqui ou"}</p>
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <button className="btn-primary" disabled={busy} onClick={() => inputRef.current?.click()}>
               Escolher arquivos
             </button>
-            <button className="btn-ghost" disabled={busy} onClick={() => void send(sampleFiles(doc.type))}>
+            <button className="btn-ghost" disabled={busy} onClick={() => void send(sampleFiles(doc.type, Date.now(), doc.competencia, doc.type === "xml_vendas" ? client?.cnpj : "11222333000181", doc.type === "xml_compras" ? client?.cnpj : undefined))}>
               {isXml ? "Usar XMLs de exemplo" : "Usar arquivo de exemplo"}
             </button>
           </div>
@@ -161,7 +174,7 @@ function DocCard({ doc }: { doc: DocRequest }) {
             type="file"
             multiple
             hidden
-            accept={isXml ? ".xml" : ".pdf,.ofx,.csv,.xlsx,.xls"}
+            accept={isXml ? ".xml" : doc.type === "extrato" ? ".pdf,.ofx" : ".pdf,.csv,.xlsx,.xls"}
             onChange={(e) => {
               void send(Array.from(e.target.files ?? []));
               e.target.value = "";

@@ -30,6 +30,7 @@ function Conteudo() {
 
   const upcoming = state.clients
     .flatMap((c) => obligationsFor(c, state.competencia).map((o) => ({ ...o, client: c })))
+    .filter(o => daysUntil(o.dueDate) >= 0)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
     .slice(0, 6);
 
@@ -44,8 +45,9 @@ function Conteudo() {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="font-display text-3xl font-semibold">Fechamento de {competenciaLabel(state.competencia)}</h1>
+      <div className="page-heading">
+        <p className="eyebrow">Visão geral do escritório</p>
+        <h1 className="font-display text-2xl font-semibold sm:text-3xl">Fechamento de {competenciaLabel(state.competencia)}</h1>
         <p className="mt-1 text-stone-600">Quem já enviou, quem falta e o que precisa da sua revisão.</p>
       </div>
 
@@ -56,36 +58,40 @@ function Conteudo() {
         <Kpi label="Concluído" value={`${pct}%`} sub={`${done} de ${totalDocs} aprovados`} tone="emerald" />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_300px]">
         <section className="card overflow-hidden">
-          <div className="border-b border-stone-200 px-5 py-3">
+          <div className="section-heading">
             <h2 className="font-display text-lg font-semibold">Clientes</h2>
+            <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">{state.clients.length} empresas</span>
           </div>
           <ul className="divide-y divide-stone-100">
             {rows.map(({ c, p, revenue }) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
-                <div className="min-w-[200px] flex-1">
+              <li key={c.id} className="client-row">
+                <div className="client-identity">
+                  <span className="client-avatar" aria-hidden="true">{c.name.slice(0, 2).toUpperCase()}</span>
+                  <div className="min-w-0">
                   <Link href={`/escritorio/clientes/${c.id}`} className="font-medium hover:text-brand">
                     {c.name}
                   </Link>
                   <p className="text-xs text-stone-500">
                     {c.regime === "simples" ? "Simples Nacional" : "Lucro Presumido"} · {c.segment}
                   </p>
+                  </div>
                 </div>
-                <div className="w-40">
-                  <div className="flex h-2 overflow-hidden rounded-full bg-stone-100">
-                    <div className="bg-emerald-500" style={{ width: `${(p.done / p.total) * 100}%` }} />
-                    <div className="bg-amber-400" style={{ width: `${(p.sent / p.total) * 100}%` }} />
+                <div className="client-progress">
+                  <div className="progress-track">
+                    <div className="bg-emerald-500" style={{ width: `${p.total ? (p.done / p.total) * 100 : 0}%` }} />
+                    <div className="bg-amber-400" style={{ width: `${p.total ? (p.sent / p.total) * 100 : 0}%` }} />
                   </div>
                   <p className="mt-1 text-xs text-stone-500">
                     {p.done}/{p.total} aprovados{p.sent ? ` · ${p.sent} p/ revisar` : ""}
                   </p>
                 </div>
-                <div className="w-28 text-right text-sm tabular-nums text-stone-700">
+                <div className="client-revenue">
                   {revenue > 0 ? brl(revenue) : <span className="text-stone-400">—</span>}
                   <p className="text-[11px] text-stone-400">faturamento (XML)</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="client-actions">
                   {p.pending > 0 && (
                     <button className="btn-ghost" onClick={() => nudge(c)}>
                       Cobrar
@@ -101,9 +107,10 @@ function Conteudo() {
         </section>
 
         <aside className="space-y-6">
-          <section className="card p-5">
+          <section className="card sidebar-card">
             <h2 className="font-display text-lg font-semibold">Próximos vencimentos</h2>
             <ul className="mt-3 space-y-3">
+              {upcoming.length === 0 && <li className="text-sm text-stone-500">Nenhum vencimento futuro nesta competência.</li>}
               {upcoming.map((o) => {
                 const d = daysUntil(o.dueDate);
                 return (
@@ -123,9 +130,9 @@ function Conteudo() {
             <p className="mt-3 text-[11px] text-stone-400">Datas ilustrativas na demo.</p>
           </section>
 
-          <section className="card p-5">
+          <section className="card sidebar-card">
             <h2 className="font-display text-lg font-semibold">Atividade recente</h2>
-            <ul className="mt-3 space-y-3">
+            <ul className="timeline mt-4 space-y-4">
               {state.activity.slice(0, 6).map((a) => (
                 <li key={a.id} className="text-sm">
                   <p>{a.text}</p>
@@ -143,7 +150,7 @@ function Conteudo() {
 function Kpi({ label, value, sub, tone }: { label: string; value: string; sub: string; tone?: "amber" | "rose" | "emerald" }) {
   const color = tone === "amber" ? "text-amber-700" : tone === "rose" ? "text-rose-700" : tone === "emerald" ? "text-emerald-700" : "text-ink";
   return (
-    <div className="card p-5">
+    <div className={`card kpi-card ${tone ? `kpi-${tone}` : ""}`}>
       <p className="label">{label}</p>
       <p className={`mt-1 font-display text-4xl font-semibold tabular-nums ${color}`}>{value}</p>
       <p className="mt-1 text-xs text-stone-500">{sub}</p>

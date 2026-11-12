@@ -64,7 +64,7 @@ function mkFiles(type: DocType, count: number, total: number | undefined, kind: 
     size: 3000 + i * 411,
     uploadedAt: new Date(Date.now() - (i + 1) * 3600_000 * 5).toISOString(),
     kind: isXml ? kind : "outro",
-    total: each ? Math.round(each * 100) / 100 : undefined,
+    total: each ? (Math.floor(total! * 100 / count) + (i < Math.round(total! * 100) % count ? 1 : 0)) / 100 : undefined,
   }));
 }
 
